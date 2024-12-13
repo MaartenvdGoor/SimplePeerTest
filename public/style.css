@@ -1,0 +1,50 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+#join-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 80vh;
+}
+
+#roomInput, #joinButton {
+    padding: 10px;
+    margin: 10px;
+    font-size: 1.2em;
+}
+
+#video-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 80vh;
+}
+
+video {
+    width: 45%;
+    margin: 10px;
+    border: 2px solid #333;
+    background-color: #000;
+}
+#controls {
+    margin-top: 10px;
+}
+
+#controls button {
+    padding: 10px;
+    margin: 5px;
+    font-size: 1em;
+}
+#shareScreenButton {
+    padding: 10px;
+    margin: 5px;
+    font-size: 1em;
+}
