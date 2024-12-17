@@ -1,3 +1,8 @@
+:root{
+    --videoWidth: 16px;
+    --videoHeight: 9px;
+}
+
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -6,6 +11,33 @@ body {
     padding: 0;
 }
 
+.gesture {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    width: 40px;
+
+    stroke: white;
+    stroke-width: 20px;
+}
+
+#thumbsUp{
+    fill: green;
+    display: none;
+}
+#thumbsDown {
+    fill: red;
+    display: none;
+}
+#openPalm{
+    fill: yellow;
+    display: none;
+}
+
+
+#localVideoContainer{
+    position: relative;
+}
 #join-container {
     display: flex;
     justify-content: center;
@@ -28,11 +60,19 @@ body {
     height: 80vh;
 }
 
-video {
-    width: 45%;
-    margin: 10px;
-    border: 2px solid #333;
-    background-color: #000;
+
+#localVideo{
+    width: calc(var(--videoWidth)* 40);
+    height: calc(var(--videoHeight)* 40);
+    background-color: black;
+
+}
+
+#remoteVideos{
+    video{
+        width: calc(var(--videoWidth)* 10);
+        height: calc(var(--videoHeight)* 10);
+    }
 }
 #controls {
     margin-top: 10px;

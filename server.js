@@ -24,8 +24,8 @@ io.on('connection', (socket) => {
         io.emit('peer-disconnected', id);
     });
 
-    socket.on('thumbsUp', () =>{
-        io.emit('thumbs_up', id)
+    socket.on('gesture', (gesture) =>{
+        io.emit('gesture', id, gesture)
     })
 
     socket.on('clearGesture', () => {

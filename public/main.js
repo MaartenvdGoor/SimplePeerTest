@@ -10,6 +10,8 @@ let peers = {}; // Store peers
 let audioMuted = false;
 let videoMuted = false;
 let thumbsUp = false;
+let thumbsDown = false;
+let openPalm = false;
 
 const joinContainer = document.getElementById('join-container');
 const videoContainer = document.getElementById('video-container');
@@ -19,7 +21,6 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideos = document.getElementById('remoteVideos');
 const muteAudioButton = document.getElementById('muteAudioButton');
 const muteVideoButton = document.getElementById('muteVideoButton');
-const shareScreenButton = document.getElementById('shareScreenButton');
 
 let gestureRecognizer = null
 let webcamRunning = false;
@@ -144,70 +145,54 @@ socket.on('peer-disconnected', peerId => {
     delete peers[peerId];
 });
 
-socket.on('thumbs_up', peerId => {
-    const videoElement = document.getElementById(`video-${peerId}`);
+socket.on('gesture', (peerId, gesture) => {
+    const videoElement = document.getElementById(`video-${peerId}`)
+    console.log(videoElement)
+    const siblings = Array.from(videoElement.parentNode.children);
+    let siblingWithId = null
     if (videoElement) {
-        videoElement.style.border = "5px solid red";
+        switch (gesture) {
+            case "thumbsUp":
+                siblingWithId = siblings.find(sibling => sibling.id === 'thumbsUp');
+                siblingWithId.style.display = 'block'
+                break
+            case "thumbsDown":
+                siblingWithId = siblings.find(sibling => sibling.id === 'thumbsDown');
+                siblingWithId.style.display = 'block'
+                break
+            case "openPalm":
+                siblingWithId = siblings.find(sibling => sibling.id === 'openPalm');
+                siblingWithId.style.display = 'block'
+                break
+        }
     }
 });
 
 socket.on('clear_gesture', peerId => {
     const videoElement = document.getElementById(`video-${peerId}`);
     if (videoElement) {
-        videoElement.style.border = ""
+        const siblings = Array.from(videoElement.parentNode.children);
+        const thumbUpEl = siblings.find(sibling => sibling.id === 'thumbsUp');
+        const thumbDownEl = siblings.find(sibling => sibling.id === 'thumbsDown');
+        const openPalmEl = siblings.find(sibling => sibling.id === 'openPalm');
+        thumbDownEl.style.display = 'none';
+        thumbUpEl.style.display = 'none'
+        openPalmEl.style.display = 'none'
     }
 })
 
 function addRemoteStream(stream, peerId) {
-    const videoElement = document.createElement('video');
+
+    let videoContainer = document.getElementById('localVideoContainer')
+    videoContainer = videoContainer.cloneNode(true);
+    const videoElement = videoContainer.childNodes[1]
     videoElement.id = `video-${peerId}`;
     videoElement.srcObject = stream;
     videoElement.autoplay = true;
-    remoteVideos.appendChild(videoElement);
+    remoteVideos.appendChild(videoContainer);
 }
 
-shareScreenButton.addEventListener('click', () => {
-    const screenPeerIds = Object.keys(peers);
-    if (screenPeerIds.length === 0) {
-        console.error('No active peers for screen sharing.');
-        return;
-    }
 
-    navigator.mediaDevices.getDisplayMedia({video: true})
-        .then(screenStream => {
-            currentVideoStream = screenStream; // Update to the screen-sharing stream
-
-            // Replace video track for each peer
-            screenPeerIds.forEach(peerId => {
-                const peer = peers[peerId];
-                if (!peer) {
-                    console.warn(`Peer with ID ${peerId} not found.`);
-                    return;
-                }
-                peer.replaceTrack(localStream.getVideoTracks()[0], screenStream.getVideoTracks()[0], localStream);
-            });
-
-            // Update the local video preview to show the screen stream
-            localVideo.srcObject = screenStream;
-
-            screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-                currentVideoStream = localStream; // Revert back to webcam stream
-
-                // Revert track replacement for each peer
-                screenPeerIds.forEach(peerId => {
-                    const peer = peers[peerId];
-                    if (!peer) return;
-
-                    peer.replaceTrack(screenStream.getVideoTracks()[0], localStream.getVideoTracks()[0], localStream);
-                });
-
-                localVideo.srcObject = localStream; // Revert to the original webcam stream
-            });
-        })
-        .catch(error => {
-            console.error('Error sharing screen:', error);
-        });
-});
 
 
 const createGestureRecognizer = async () => {
@@ -235,31 +220,52 @@ async function predictWebcam() {
         lastVideoTime = localVideo.currentTime;
         results = gestureRecognizer.recognizeForVideo(localVideo, nowInMs);
         if (results.gestures.length > 0){
-            if (results.gestures[0][0].categoryName === "Thumb_Up"  && !thumbsUp){
+            let cat = results.gestures[0][0].categoryName
+            if (cat === "Thumb_Up"  && !thumbsUp){
                 thumbsUp = true
-                socket.emit('thumbsUp',{});
-                console.log(thumbsUp)
-                localVideo.style.border = "5px solid red";
+                let el = document.getElementById('thumbsUp');
+                el.style.display = 'block'
+                socket.emit('gesture','thumbsUp');
             }
-            else if(results.gestures[0][0].categoryName === "None" && thumbsUp){
-                thumbsUp = false
+            else if (cat === "Thumb_Down"  && !thumbsUp){
+                thumbsDown = true
+                let el = document.getElementById('thumbsDown');
+                el.style.display = 'block'
+                socket.emit('gesture','thumbsUp');
+            }
+            else if (cat === "Open_Palm"  && !thumbsUp){
+                openPalm = true
+                let el = document.getElementById('openPalm');
+                el.style.display = 'block'
+                socket.emit('gesture','openPalm');
+            }
+            else if(cat === "None" && (thumbsUp || thumbsDown || openPalm )){
+                removeGesture()
                 socket.emit('clearGesture')
-                localVideo.style.border = "";
                 console.log(thumbsUp)
             }
         }
-        else if(thumbsUp){
-            thumbsUp = false
+        else if(thumbsUp || thumbsDown || openPalm){
+            removeGesture()
             socket.emit('clearGesture')
-            localVideo.style.border = "";
             console.log(thumbsUp)
         }
-
-
     }
 
     // Call this function again to keep predicting when the browser is ready.
     if (webcamRunning === true) {
         window.requestAnimationFrame(predictWebcam);
     }
+}
+
+function removeGesture(){
+    thumbsUp = false
+    thumbsDown = false
+    openPalm = false
+    let el1 = document.getElementById('thumbsUp');
+    let el2 = document.getElementById('thumbsDown');
+    let el3 = document.getElementById('openPalm');
+    el1.style.display = 'none'
+    el2.style.display = 'none'
+    el3.style.display = 'none'
 }
