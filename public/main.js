@@ -147,7 +147,7 @@ socket.on('peer-disconnected', peerId => {
 
 socket.on('gesture', (peerId, gesture) => {
     const videoElement = document.getElementById(`video-${peerId}`)
-    console.log(videoElement)
+    console.log(videoElement.parentNode)
     const siblings = Array.from(videoElement.parentNode.children);
     let siblingWithId = null
     if (videoElement) {
@@ -231,7 +231,7 @@ async function predictWebcam() {
                 thumbsDown = true
                 let el = document.getElementById('thumbsDown');
                 el.style.display = 'block'
-                socket.emit('gesture','thumbsUp');
+                socket.emit('gesture','thumbsDown');
             }
             else if (cat === "Open_Palm"  && !thumbsUp){
                 openPalm = true
